@@ -1,0 +1,133 @@
+version: '3.9'
+
+services:
+  jellyseerr:
+    image: docker.io/fallenbagel/jellyseerr:latest
+    container_name: jellyseerr
+    ports:
+      - '5055:5055'
+    volumes:
+      - ~/.config/jellyseerr:/app/config:Z
+    # restart: unless-stopped
+    networks:
+      - media_network
+
+  qbittorrent:
+    image: lscr.io/linuxserver/qbittorrent
+    container_name: qbittorrent
+    environment:
+      - PUID=1000
+      - PGID=1000
+      - TZ=Asia/Kolkata
+      - WEBUI_PORT=8080
+    volumes:
+      - ~/.config/qbittorrent:/config:Z
+      - ~/.torrents:/data:z
+    ports:
+      - "8080:8080"
+      - "6881:6881"
+      - "6881:6881/udp"
+    # restart: unless-stopped
+    networks:
+      - media_network
+
+  radarr:
+    image: lscr.io/linuxserver/radarr:latest
+    container_name: radarr
+    ports:
+      - '7878:7878'
+    volumes:
+      - ~/.config/radarr:/config:Z
+      - ~/.torrents/movies:/data/movies:z
+    environment:
+      - PUID=0
+      - PGID=0
+      - TZ=Asia/Kolkata
+    # restart: unless-stopped
+    networks:
+      - media_network
+
+  sonarr:
+    image: lscr.io/linuxserver/sonarr:latest
+    container_name: sonarr
+    ports:
+      - '8989:8989'
+    volumes:
+      - ~/.config/sonarr:/config:Z
+      - ~/.torrents/tv-series:/data/tv-series:z
+    environment:
+      - PUID=0
+      - PGID=0
+      - TZ=Asia/Kolkata
+    # restart: unless-stopped
+    networks:
+      - media_network
+
+  prowlarr:
+    image: docker.io/linuxserver/prowlarr:latest
+    container_name: prowlarr
+    environment:
+      - PUID=0
+      - PGID=0
+      - TZ=Asia/Kolkata
+    volumes:
+      - ~/.config/prowlarr:/config:Z
+    ports:
+      - "9696:9696"
+    restart: unless-stopped
+    networks:
+      - media_network
+
+  jellyfin:
+    image: docker.io/linuxserver/jellyfin:latest
+    container_name: jellyfin
+    user: "${UID}:${GID}"           # Run as your user/group for rootless security
+    ports:
+      - "8096:8096/tcp"      # Web UI
+      - "1900:1900/udp"      # DLNA discovery (optional)
+      - "7359:7359/udp"      # Auto-discovery (optional)
+    volumes:
+      # Configuration and cache: private SELinux label
+      - ~/.config/jellyfin:/config:Z
+      - ~/.cache/jellyfin:/cache:Z
+      
+      # Media library
+      - type: bind
+        source: /media
+        target: /media
+        read_only: true
+        bind:
+          relabel: "shared"
+
+      # Movies and TV libraries: shared SELinux label, read-only
+      - type: bind
+        source: ~/.torrents/movies
+        target: /data/movies
+        read_only: true
+        bind:
+          relabel: "shared"
+
+      - type: bind
+        source: ~/.torrents/tv-series
+        target: /data/tv-series
+        read_only: true
+        bind:
+          relabel: "shared"
+
+    # devices:
+    #   - /dev/dri:/dev/dri           # Intel hardware acceleration
+    tmpfs:
+      - /tmp:size=2G                # RAM-backed temp storage for transcoding
+    environment:
+      - PUID=1000
+      - GUID=1000
+      - TZ=Asia/Kolkata             # Set your time zone
+    # restart: unless-stopped
+    networks:
+      - media_network
+    labels:
+      io.containers.autoupdate: registry
+
+networks:
+  media_network:
+    driver: bridge
