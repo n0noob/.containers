@@ -16,8 +16,8 @@ services:
     image: lscr.io/linuxserver/qbittorrent
     container_name: qbittorrent
     environment:
-      - PUID=1000
-      - PGID=1000
+      - PUID=0
+      - PGID=0
       - TZ=Asia/Kolkata
       - WEBUI_PORT=8080
     volumes:
@@ -81,7 +81,9 @@ services:
   jellyfin:
     image: docker.io/linuxserver/jellyfin:latest
     container_name: jellyfin
-    user: "${UID}:${GID}"           # Run as your user/group for rootless security
+    # Unable to see newly downloaded movies in jellyfin
+    # user: "${UID}:${GID}"           # Run as your user/group for rootless security
+    user: "0:0"
     ports:
       - "8096:8096/tcp"      # Web UI
       - "1900:1900/udp"      # DLNA discovery (optional)
@@ -119,8 +121,9 @@ services:
     tmpfs:
       - /tmp:size=2G                # RAM-backed temp storage for transcoding
     environment:
-      - PUID=1000
-      - GUID=1000
+      # Unable to see newly downloaded movies in jellyfin
+      # - PUID=1000
+      # - GUID=1000
       - TZ=Asia/Kolkata             # Set your time zone
     # restart: unless-stopped
     networks:
