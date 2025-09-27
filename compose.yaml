@@ -6,6 +6,12 @@ services:
     container_name: jellyseerr
     ports:
       - '5055:5055'
+    environment:
+      - PUID=0
+      - PGID=0
+      - LOG_LEVEL=debug
+      - TZ=Asia/Kolkata
+      - PORT=5055
     volumes:
       - ~/.config/jellyseerr:/app/config:Z
     # restart: unless-stopped
