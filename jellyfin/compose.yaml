@@ -1,0 +1,39 @@
+version: '3.9'
+
+services:
+  jellyfin:
+    image: docker.io/linuxserver/jellyfin:latest
+    container_name: jellyfin
+    # Unable to see newly downloaded movies in jellyfin
+    # user: "${UID}:${GID}"           # Run as your user/group for rootless security
+    user: "0:0"
+    ports:
+      - "8096:8096/tcp"      # Web UI
+      - "1900:1900/udp"      # DLNA discovery (optional)
+      - "7359:7359/udp"      # Auto-discovery (optional)
+    volumes:
+      - ~/.config/jellyfin:/config
+      - ~/.cache/jellyfin:/cache
+      - type: bind
+        source: ~/.media
+        target: /media
+        read_only: true
+        bind:
+          relabel: "shared"
+    # devices:
+    #   - /dev/dri:/dev/dri           # Intel hardware acceleration
+    tmpfs:
+      - /tmp:size=2G                # RAM-backed temp storage for transcoding
+    environment:
+      # Unable to see newly downloaded movies in jellyfin
+      # - PUID=1000
+      # - GUID=1000
+      - TZ=Asia/Kolkata             # Set your time zone
+    # restart: unless-stopped
+    network_mode: host
+    # IMPORTANT: GPU Passthrough via CDI
+    # This line tells Podman to expose ALL detected NVIDIA GPUs (via the CDI spec)
+    devices:
+      - nvidia.com/gpu=all
+    labels:
+      io.containers.autoupdate: registry
