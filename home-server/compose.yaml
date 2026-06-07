@@ -98,14 +98,7 @@ services:
       # Configuration and cache: private SELinux label
       - ~/.config/jellyfin:/config:Z
       - ~/.cache/jellyfin:/cache:Z
-      
-      # Media library
-      - type: bind
-        source: /media
-        target: /media
-        read_only: true
-        bind:
-          relabel: "shared"
+      - /media:/media:ro
 
       # Movies and TV libraries: shared SELinux label, read-only
       - type: bind
